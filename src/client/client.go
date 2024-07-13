@@ -9,7 +9,7 @@ import (
 )
 
 var frequenciesBuffer = sync.Pool{
-	New: func() any { return make([]float64, 0) },
+	New: func() any { return make([]float64, DetectSamplesOptimalSize) },
 }
 
 const (
@@ -46,15 +46,16 @@ func (c *Client) Calibrate(stream frequency.FrequencyRandomizer_SpawnFrequencies
 	c.Detector.samples = frequenciesBuffer.Get().([]float64)
 	defer frequenciesBuffer.Put(&c.Detector.samples)
 
-	for i := 1; i <= calibrateOn; i++ {
+	for i := 0; i < calibrateOn; i++ {
 		message, err := stream.Recv()
 		if err != nil {
 			return err
 		}
 
-		c.Detector.samples = append(c.Detector.samples, message.GetFrequency())
+		c.Detector.samples[i] = message.GetFrequency()
+		c.Detector.samplesCount = i + 1
 		if err := c.Detector.Update(); err == nil {
-			log.Printf("calibrated on %d samples: mean=%f; std=%f\n", len(c.Detector.samples), c.Detector.Mean(), c.Detector.Std())
+			log.Printf("calibrated on %d samples: mean=%f; std=%f\n", c.Detector.samplesCount, c.Detector.Mean(), c.Detector.Std())
 		}
 	}
 

@@ -6,9 +6,10 @@ import (
 )
 
 type Detector struct {
-	mean    float64
-	std     float64
-	samples []float64
+	mean         float64
+	std          float64
+	samples      []float64
+	samplesCount int
 }
 
 func NewDetector() *Detector {
@@ -32,22 +33,22 @@ func (d *Detector) Samples() []float64 {
 }
 
 func (d *Detector) Update() error {
-	if len(d.samples) <= 1 {
+	if d.samplesCount <= 1 {
 		return fmt.Errorf("samples size can't be <= 1, current is %d", len(d.samples))
 	}
 
 	// https://stats.stackexchange.com/questions/134476/how-to-estimate-mean-and-standard-deviation-of-a-normal-distribution-from-noisy
 	d.mean = 0
-	for _, sample := range d.samples {
-		d.mean += sample
+	for i := 0; i < d.samplesCount; i++ {
+		d.mean += d.samples[i]
 	}
-	d.mean /= float64(len(d.samples))
+	d.mean /= float64(d.samplesCount)
 
 	d.std = 0
-	for _, sample := range d.samples {
-		d.std += (sample - d.mean) * (sample - d.mean)
+	for i := 0; i < d.samplesCount; i++ {
+		d.std += (d.samples[i] - d.mean) * (d.samples[i] - d.mean)
 	}
-	d.std = math.Sqrt(d.std / float64(len(d.samples)-1))
+	d.std = math.Sqrt(d.std / float64(d.samplesCount-1))
 
 	return nil
 }
