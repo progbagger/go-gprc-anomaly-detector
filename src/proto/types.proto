@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "amogus.sus/frequency";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+message Message {
+  string session_id = 1;
+  double frequency = 2;
+  google.protobuf.Timestamp current_timestamp = 3;
+}
+
+service FrequencyRandomizer {
+  rpc SpawnFrequencies(google.protobuf.Empty) returns (stream Message);
+}
