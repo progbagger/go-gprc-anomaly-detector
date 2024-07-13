@@ -5,8 +5,6 @@ import (
 	"log"
 	"math/rand"
 	frequency "team00/generated"
-	"team00/types"
-	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/google/uuid"
@@ -14,32 +12,40 @@ import (
 )
 
 type Server struct {
-	MessageGenerator types.MessageGenerator
-
 	frequency.UnimplementedFrequencyRandomizerServer
 }
 
 func (s *Server) SpawnFrequencies(_ *empty.Empty, stream frequency.FrequencyRandomizer_SpawnFrequenciesServer) error {
 	errorsCount := 0
+	sessionId, err := uuid.NewUUID()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	messageGenerator := NewMessageGenerator(sessionId)
 
 	for {
-		message, err := s.MessageGenerator.Generate()
-		if err != nil {
-			if err := checkErrors(err, &errorsCount); err != nil {
-				return err
+		select {
+		case <-stream.Context().Done():
+			log.Printf("session with id \"%s\" is closed", messageGenerator.SessionId.String())
+			return nil
+		default:
+			message, err := messageGenerator.Generate()
+			if err != nil {
+				if err := checkErrors(err, &errorsCount); err != nil {
+					return err
+				}
+				continue
 			}
-			continue
-		}
 
-		if err := stream.Send(message); err != nil {
-			if err := checkErrors(err, &errorsCount); err != nil {
-				return err
+			if err := stream.Send(message); err != nil {
+				if err := checkErrors(err, &errorsCount); err != nil {
+					return err
+				}
+				continue
 			}
-			continue
-		}
 
-		fmt.Println(message.String())
-		time.Sleep(SendCooldown)
+			fmt.Println(message.String())
+		}
 	}
 }
 
@@ -57,14 +63,17 @@ func checkErrors(err error, errorsCount *int) error {
 }
 
 type messageGenerator struct {
+	SessionId uuid.UUID
+
 	Mean float64
 	Std  float64
 }
 
-func NewMessageGenerator() *messageGenerator {
+func NewMessageGenerator(sessionId uuid.UUID) *messageGenerator {
 	return &messageGenerator{
-		Mean: MinMean + rand.Float64()*(MaxMean-MinMean),
-		Std:  MinStd + rand.Float64()*(MaxStd-MinStd),
+		SessionId: sessionId,
+		Mean:      MinMean + rand.Float64()*(MaxMean-MinMean),
+		Std:       MinStd + rand.Float64()*(MaxStd-MinStd),
 	}
 }
 
@@ -76,17 +85,10 @@ const (
 	MaxStd float64 = 1.5
 
 	MaxErrorsCount int = 5
-
-	SendCooldown time.Duration = time.Millisecond * 100
 )
 
 func (mg *messageGenerator) Generate() (*frequency.Message, error) {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return nil, err
-	}
-
-	return mg.generateWithSessionId(id), nil
+	return mg.generateWithSessionId(mg.SessionId), nil
 }
 
 func (mg *messageGenerator) generateWithSessionId(id uuid.UUID) *frequency.Message {

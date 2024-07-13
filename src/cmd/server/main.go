@@ -25,10 +25,10 @@ func main() {
 	grpcServer := grpc.NewServer()
 	frequency.RegisterFrequencyRandomizerServer(
 		grpcServer,
-		&server.Server{
-			MessageGenerator: server.NewMessageGenerator(),
-		},
+		&server.Server{},
 	)
+
+	log.Printf("starting gRPC server on %s", *args.Address)
 	err = grpcServer.Serve(lis)
 	if err != nil {
 		log.Fatalln(err)
