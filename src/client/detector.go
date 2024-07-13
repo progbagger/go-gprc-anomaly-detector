@@ -36,6 +36,7 @@ func (d *Detector) Update() error {
 		return fmt.Errorf("samples size can't be <= 1, current is %d", len(d.samples))
 	}
 
+	// https://stats.stackexchange.com/questions/134476/how-to-estimate-mean-and-standard-deviation-of-a-normal-distribution-from-noisy
 	d.mean = 0
 	for _, sample := range d.samples {
 		d.mean += sample
