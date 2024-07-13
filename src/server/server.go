@@ -22,6 +22,7 @@ func (s *Server) SpawnFrequencies(_ *empty.Empty, stream frequency.FrequencyRand
 		log.Fatalln(err)
 	}
 	messageGenerator := NewMessageGenerator(sessionId)
+	fmt.Printf("generated mean=%f; std=%f for session \"%s\"\n", messageGenerator.Mean, messageGenerator.Std, sessionId.String())
 
 	for {
 		select {
