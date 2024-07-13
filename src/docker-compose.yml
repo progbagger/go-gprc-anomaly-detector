@@ -1,0 +1,42 @@
+services:
+  builder:
+    image: golang:1.22.4
+    volumes:
+      - .:/src
+      - ../build:/output
+    working_dir: /src
+    command: >
+      sh -c """
+        go mod tidy;
+        go build -o /output/server cmd/server/main.go;
+        go build -o /output/client cmd/client/main.go
+      """
+
+  postgres:
+    image: postgres
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  server:
+    image: ubuntu
+    volumes:
+      - ../build:/cmd
+    working_dir: /cmd
+    expose:
+      - 8888
+    ports:
+      - 8888:8888
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+    command: ./server
+
+volumes:
+  binaries:
