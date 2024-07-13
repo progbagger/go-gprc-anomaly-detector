@@ -4,8 +4,11 @@ option go_package = "amogus.sus/frequency";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+import "options/gorm.proto";
 
 message Message {
+  option (gorm.opts).ormable = true;
+
   string session_id = 1;
   double frequency = 2;
   google.protobuf.Timestamp current_timestamp = 3;

@@ -23,7 +23,8 @@ type Client struct {
 
 func NewClient() *Client {
 	return &Client{
-		Detector: *NewDetector(),
+		Detector:         *NewDetector(),
+		IsDetectFinished: false,
 	}
 }
 
